@@ -1,0 +1,30 @@
+services:
+  bot:
+    build: .
+    container_name: claude-discord
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      # Config (read-only, hot-reload supported)
+      - ./config.json:/app/config.json:ro
+      # Claude Code auth persistence (/root/.claude dir + /root/.claude.json file)
+      - claude-auth:/root/.claude
+      - ./claude-config.json:/root/.claude.json
+      # Project directories
+      - ./:/app/projects/claude-with-discord
+      - ./projects/bake-frontend:/app/projects/bake-frontend
+      - ./projects/bake-backend:/app/projects/bake-backend
+      - ./projects/BitBake-App:/app/projects/BitBake-App
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  claude-auth:

@@ -1,0 +1,9 @@
+node_modules
+dist
+.env
+config.json
+.git
+.claude
+*.log
+logs
+projects

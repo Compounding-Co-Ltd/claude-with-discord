@@ -12,11 +12,14 @@ import { createPermissionButtons, formatPermissionRequest, isAskUserQuestion } f
 import { createQuestionComponents, formatQuestionMessage, type Question } from "../discord/components/questionButtons.js";
 import { saveDiscordImage, formatPendingImagesList } from "../utils/imageSaver.js";
 import { generateAudio, extractTextForTTS } from "../utils/audioGenerator.js";
+import { isAuthenticated, startLogin, type LoginSession } from "../services/claudeAuth.js";
 
 export class SessionManager {
   private sessions = new Map<string, SessionInfo>();
   private cleanupInterval: ReturnType<typeof setInterval>;
   private client: Client | null = null;
+  private pendingLoginSession: LoginSession | null = null;
+  private pendingLoginResolve: ((token: string) => void) | null = null;
 
   /**
    * Get the current config (hot-reloaded).
@@ -142,6 +145,58 @@ export class SessionManager {
     if (!session && this.sessions.size >= this.config.max_concurrent_sessions) {
       await thread.send("*Maximum concurrent sessions reached. Please close an existing session first.*");
       return;
+    }
+
+    // If login is pending, treat this message as the authorization code from the browser
+    if (this.pendingLoginSession && this.pendingLoginResolve) {
+      const code = userMessage.trim();
+      this.pendingLoginResolve(code);
+      this.pendingLoginResolve = null;
+      return;
+    }
+
+    // Check Claude Code authentication on new session
+    if (!session && !isAuthenticated()) {
+      if (this.pendingLoginSession) {
+        await thread.send("*Login is already in progress. Please paste the authorization code from the browser.*");
+        return;
+      }
+
+      try {
+        await thread.send("**Claude Code is not logged in.** Starting login flow...");
+        const loginSession = startLogin();
+        this.pendingLoginSession = loginSession;
+
+        await thread.send(
+          `**Please log in via the link below:**\n${loginSession.url}\n\n*After logging in the browser, you will receive an authorization code. **Paste that code here** to complete login.*`
+        );
+
+        // Wait for the user to send the code as a Discord message
+        const code = await new Promise<string>((resolve) => {
+          this.pendingLoginResolve = resolve;
+        });
+
+        await thread.send("*Exchanging code for API key...*");
+
+        // Exchange code for API key (direct HTTP calls, no CLI dependency)
+        const error = await loginSession.submitCode(code);
+
+        this.pendingLoginSession = null;
+
+        if (!error) {
+          await thread.send("**Login successful!** You can now start a new session.");
+        } else {
+          const truncated = error.length > 500 ? error.substring(0, 500) + "..." : error;
+          await thread.send(`*Login failed: ${truncated}*\n\n*Please try again by sending a new message.*`);
+        }
+        return;
+      } catch (err) {
+        this.pendingLoginSession = null;
+        this.pendingLoginResolve = null;
+        const errMsg = err instanceof Error ? err.message : String(err);
+        await thread.send(`*Login error: ${errMsg}*`);
+        return;
+      }
     }
 
     // Mark as processing or queue message
