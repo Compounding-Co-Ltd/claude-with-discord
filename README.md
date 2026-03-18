@@ -15,7 +15,20 @@ A Discord bot that enables interaction with [Claude Code](https://docs.anthropic
 
 ## Quick Start
 
-For detailed setup instructions, see the **[Setup Guide](docs/SETUP.md)**.
+**One-command setup:**
+```bash
+git clone https://github.com/anthropics/claude-with-discord.git
+cd claude-with-discord
+./scripts/setup.sh
+```
+
+This script will:
+- Check and install dependencies
+- Authenticate Claude Code CLI
+- Guide you through Discord bot token setup
+- Configure your first channel
+
+For manual setup, see the **[Setup Guide](docs/SETUP.md)**.
 
 ## Prerequisites
 
