@@ -15,97 +15,23 @@ A Discord bot that enables interaction with [Claude Code](https://docs.anthropic
 
 ## Quick Start
 
-**One-command setup:**
+### Automated Setup (Recommended)
+
 ```bash
 git clone https://github.com/anthropics/claude-with-discord.git
 cd claude-with-discord
 ./scripts/setup.sh
 ```
 
-This script will:
-- Check and install dependencies
-- Authenticate Claude Code CLI
-- Guide you through Discord bot token setup
-- Configure your first channel
+The script handles everything: dependency installation, Claude CLI auth, and configuration.
 
-For manual setup, see the **[Setup Guide](docs/SETUP.md)**.
+### Manual Setup
 
-## Prerequisites
+See the **[Setup Guide](docs/SETUP.md)** for step-by-step instructions.
 
-- Node.js 20+
-- [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code) installed and authenticated
-- Discord Bot Token ([create one here](https://discord.com/developers/applications))
-- (Optional) OpenAI API Key for voice message transcription
+### Docker
 
-## Installation
-
-1. Clone the repository:
-```bash
-git clone https://github.com/anthropics/claude-with-discord.git
-cd claude-with-discord
-```
-
-2. Install dependencies:
-```bash
-npm install
-```
-
-3. Set up environment variables:
-```bash
-cp .env.example .env
-```
-
-Edit `.env` and add your Discord bot token:
-```env
-DISCORD_TOKEN=your_discord_bot_token_here
-OPENAI_API_KEY=your_openai_api_key_here  # Optional: for voice transcription
-```
-
-4. Configure your channels and projects:
-```bash
-cp config.example.json config.json
-```
-
-Edit `config.json` to map your Discord channel IDs to project paths:
-```json
-{
-  "channel_project_map": {
-    "YOUR_CHANNEL_ID": "/path/to/your/project"
-  },
-  "channel_system_prompts": {
-    "YOUR_CHANNEL_ID": "Custom system prompt for this project..."
-  }
-}
-```
-
-5. Build and run:
-```bash
-npm run build
-npm start
-```
-
-## Configuration
-
-### config.json
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `global_context` | string | Context included in all sessions |
-| `channel_project_map` | object | Maps Discord channel IDs to project directories |
-| `channel_system_prompts` | object | Custom system prompts per channel |
-| `permission_mode` | string | `"bypassPermissions"` or `"default"` |
-| `max_budget_usd` | number | Maximum budget per session in USD |
-| `max_turns` | number | Maximum conversation turns per session |
-| `max_concurrent_sessions` | number | Maximum active sessions |
-| `session_timeout_minutes` | number | Session timeout in minutes |
-| `allowed_users` | array | Discord user IDs allowed to use the bot (empty = all) |
-| `tts_enabled` | boolean | Enable text-to-speech responses |
-| `tts_voice` | string | TTS voice (e.g., `"en-US-AriaNeural"`) |
-
-### Permission Modes
-
-- `bypassPermissions`: Automatically approve all tool executions (use with caution)
-- `default`: Show interactive permission prompts for potentially dangerous operations
+See the **[Docker Guide](docs/DOCKER.md)** for container deployment.
 
 ## Usage
 
@@ -115,37 +41,53 @@ npm start
 2. A new thread will be created with your session
 3. Claude Code will respond in the thread
 
-### Commands
+### Session Controls
 
-In an active session thread:
-- **New Session**: Click the "New Session" button to start fresh
-- **End Session**: Click "End Session" to close the current session
-- **Mode Switch**: Use mode buttons to switch between Action/Plan/Ask modes
+- **New Session**: Start a fresh session
+- **End Session**: Close the current session
+- **Mode Switch**: Toggle between Action/Plan/Ask modes
+
+### Modes
+
+| Mode | Description |
+|------|-------------|
+| **Action** | Claude executes tasks directly |
+| **Plan** | Claude creates plans for approval before execution |
+| **Ask** | Claude only answers questions, no code changes |
 
 ### Subsessions
 
-The bot supports spawning parallel sub-agents (subsessions) for complex tasks:
+The bot supports spawning parallel sub-agents for complex tasks:
 - Sub-agents run in their own Discord threads
 - Results are automatically delivered back to the parent session
 - Useful for parallelizing independent tasks
 
-## Docker
+## Configuration
 
-For Docker deployment, see the **[Docker Guide](docs/DOCKER.md)**.
+See [config.example.json](config.example.json) for all available options.
 
-Quick start:
-```bash
-docker-compose up -d
-```
+Key settings:
+
+| Option | Description |
+|--------|-------------|
+| `channel_project_map` | Maps Discord channel IDs to project directories |
+| `channel_system_prompts` | Custom system prompts per channel |
+| `permission_mode` | `"bypassPermissions"` or `"default"` |
+| `max_concurrent_sessions` | Maximum active sessions |
+| `allowed_users` | Restrict access to specific Discord user IDs |
 
 ## Development
 
 ```bash
-# Run in development mode with hot reload
+# Development mode with hot reload
 npm run dev
 
 # Build TypeScript
 npm run build
+
+# Lint and format
+npm run lint
+npm run format
 ```
 
 ## Architecture
@@ -168,17 +110,16 @@ src/
 └── utils/                # Utilities
 ```
 
-## Contributing
+## Documentation
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines.
-
-## Security
-
-See [SECURITY.md](SECURITY.md) for security policy and reporting vulnerabilities.
+- [Setup Guide](docs/SETUP.md) - Detailed installation instructions
+- [Docker Guide](docs/DOCKER.md) - Container deployment
+- [Contributing](CONTRIBUTING.md) - Contribution guidelines
+- [Security](SECURITY.md) - Security policy
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT License - see [LICENSE](LICENSE) for details.
 
 ## Acknowledgments
 
