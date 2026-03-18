@@ -1,0 +1,28 @@
+services:
+  bot:
+    build: .
+    container_name: claude-discord
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      # Config (read-only, hot-reload supported)
+      - ./config.json:/app/config.json:ro
+      # Home directory persistence (auth, git config, ssh keys, etc.)
+      - user-home:/root
+      # Project directories - add your projects here
+      # Format: /host/path:/app/projects/name
+      - /path/to/your/project1:/app/projects/project1
+      - /path/to/your/project2:/app/projects/project2
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  user-home:

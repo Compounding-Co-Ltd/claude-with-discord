@@ -131,21 +131,11 @@ The bot supports spawning parallel sub-agents (subsessions) for complex tasks:
 
 ## Docker
 
-### Using Docker Compose
+For Docker deployment, see the **[Docker Guide](docs/DOCKER.md)**.
 
+Quick start:
 ```bash
 docker-compose up -d
-```
-
-### Building Manually
-
-```bash
-docker build -t claude-discord .
-docker run -d \
-  --name claude-discord \
-  --env-file .env \
-  -v $(pwd)/config.json:/app/config.json:ro \
-  claude-discord
 ```
 
 ## Development

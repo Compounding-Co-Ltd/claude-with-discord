@@ -9,6 +9,7 @@ dist/
 # Configuration (contains sensitive channel IDs and project paths)
 config.json
 claude-config.json
+docker-compose.yml
 
 # Logs
 bot.log
