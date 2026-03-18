@@ -21,23 +21,30 @@ A Discord bot that enables interaction with [Claude Code](https://docs.anthropic
 
 ## Quick Start
 
-### Automated Setup (Recommended)
+### Let Claude Set It Up For You
+
+Clone the repo and ask Claude Code to set it up:
 
 ```bash
 git clone https://github.com/anthropics/claude-with-discord.git
 cd claude-with-discord
-./scripts/setup.sh
+claude
 ```
 
-The script handles everything: dependency installation, Claude CLI auth, and configuration.
+Then paste this prompt:
 
-### Manual Setup
+```
+Set up this Discord bot for me:
+1. Run ./scripts/setup.sh and follow the prompts
+2. I'll provide the Discord bot token when asked
+3. Help me configure my first project channel
+```
 
-See the **[Setup Guide](docs/SETUP.md)** for step-by-step instructions.
+### Other Setup Options
 
-### Docker
-
-See the **[Docker Guide](docs/DOCKER.md)** for container deployment.
+- **[Setup Script](scripts/setup.sh)** - Run `./scripts/setup.sh` directly
+- **[Setup Guide](docs/SETUP.md)** - Step-by-step manual instructions
+- **[Docker Guide](docs/DOCKER.md)** - Container deployment
 
 ## Usage
 
