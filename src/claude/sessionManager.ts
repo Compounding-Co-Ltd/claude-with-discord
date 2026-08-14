@@ -30,7 +30,7 @@ import { createPermissionButtons, formatPermissionRequest, isAskUserQuestion } f
 import { createQuestionComponents, formatQuestionMessage, type Question } from "../discord/components/questionButtons.js";
 import { saveDiscordImage, formatPendingImagesList } from "../utils/imageSaver.js";
 import { generateAudio, extractTextForTTS } from "../utils/audioGenerator.js";
-import { isAuthenticated, startLogin, type LoginSession } from "../services/claudeAuth.js";
+import { isAuthenticated, refreshToken, refreshBotToken, startLogin, type LoginSession } from "../services/claudeAuth.js";
 
 export type MessageCallback = (threadId: string, role: 'user' | 'assistant' | 'system', content: string, cost?: number) => void;
 
@@ -278,6 +278,7 @@ export class SessionManager {
     pendingImages: PendingImage[] = [],
     audioTranscriptions: AudioTranscription[] = [],
     userDiscordMessage?: Message,
+    authRetried = false,
   ): Promise<void> {
     let session = this.sessions.get(threadId);
 
@@ -296,6 +297,13 @@ export class SessionManager {
     }
 
     // Check Claude Code authentication on new session
+    // If token expired, try auto-refresh before prompting for login
+    if (!session && !isAuthenticated()) {
+      const refreshed = await refreshToken();
+      if (refreshed) {
+        console.log("[SessionManager] Token auto-refreshed successfully");
+      }
+    }
     if (!session && !isAuthenticated()) {
       if (this.pendingLoginSession) {
         await thread.send("*Login is already in progress. Please paste the authorization code from the browser.*");
@@ -745,6 +753,25 @@ export class SessionManager {
       }
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
+      const isAuth401 = errMsg.includes("401") || errMsg.includes("authentication_error") || errMsg.includes("Invalid authentication credentials");
+
+      // Auth 401 safety net: a spawned cli.js token went stale (rare lineage
+      // collision). Refresh the bot-private token and retry this message ONCE
+      // so the user never sees the error. The refresh updates the env token
+      // that the next spawned cli.js inherits.
+      if (isAuth401 && !authRetried && !errMsg.includes("aborted")) {
+        console.warn(`[SessionManager] 401 on thread ${threadId} — refreshing bot token and retrying once...`);
+        if (session) { session.isProcessing = false; session.query = null; }
+        const refreshed = await refreshBotToken().catch(() => false);
+        if (refreshed) {
+          await this.sendMessage(
+            threadId, channelId, projectPath, userMessage, thread,
+            images, pendingImages, audioTranscriptions, userDiscordMessage, true,
+          );
+          return;
+        }
+      }
+
       if (!errMsg.includes("aborted")) {
         console.error(`Session error for thread ${threadId}:`, err);
         // Truncate error message to fit Discord's 2000 char limit
