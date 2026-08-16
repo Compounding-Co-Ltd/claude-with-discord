@@ -739,13 +739,9 @@ export class SessionManager {
 
             const isError = (message as any).subtype && (message as any).subtype !== "success";
             this.setReaction(userDiscordMessage, isError ? "❌" : "✅");
-
-            // Task completed successfully, process next queued message
-            if (session && session.messageQueue.length > 0) {
-              session.isProcessing = false;
-              session.query = null;
-              this.processNextQueuedMessage(threadId, thread);
-            }
+            // Queue processing is handled exclusively by the outer finally block
+            // to avoid a race condition where outer finally overwrites isProcessing=true
+            // set by the next sendMessage call.
           }
         }
       } finally {
@@ -784,7 +780,11 @@ export class SessionManager {
         session.isProcessing = false;
         session.query = null;
 
-        // Process next queued message if any (in case result event didn't trigger it)
+        // Process next queued message. This is the sole queue processor.
+        // processNextQueuedMessage calls sendMessage synchronously (up to the first
+        // await), so sendMessage sets session.isProcessing=true before this finally
+        // block returns — eliminating the race condition where a concurrent message
+        // could see isProcessing=false and bypass the queue.
         if (session.messageQueue.length > 0) {
           this.processNextQueuedMessage(threadId, thread);
         }
